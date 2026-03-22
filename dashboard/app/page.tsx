@@ -162,8 +162,8 @@ export default function Home() {
       </div>
 
       {/* 主内容 */}
-      <main className="relative z-10 p-6 md:p-12">
-        <div className="max-w-7xl mx-auto space-y-8">
+      <main className="relative z-10 flex items-center justify-center min-h-screen p-6 md:p-12">
+        <div className="w-full max-w-5xl mx-auto space-y-8">
           {/* 头部 - HUD 风格 */}
           <header className="text-center space-y-6 py-8 animate-fade-in">
             <div className="inline-flex items-center gap-2 mb-4 cyber-badge">
