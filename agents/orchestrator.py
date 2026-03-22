@@ -19,6 +19,8 @@ from shared.utils import (
     timestamp
 )
 
+from .performance_agent import PerformanceAgent
+
 
 class OrchestratorAgent:
     """
@@ -36,6 +38,7 @@ class OrchestratorAgent:
         self.security_agent = SecurityAgent()
         self.quality_agent = QualityAgent()
         self.docs_agent = DocumentationAgent()
+        self.performance_agent = PerformanceAgent()
 
     async def process_pr(self, repo: str, pr_number: int) -> Dict[str, Any]:
         """
@@ -65,15 +68,17 @@ class OrchestratorAgent:
             self.security_agent.analyze(pr_info),
             self.quality_agent.analyze(pr_info),
             self.docs_agent.analyze(pr_info),
+            self.performance_agent.analyze(pr_info),
             return_exceptions=True
         )
 
         security_result = results[0] if not isinstance(results[0], Exception) else {"error": str(results[0])}
         quality_result = results[1] if not isinstance(results[1], Exception) else {"error": str(results[1])}
         docs_result = results[2] if not isinstance(results[2], Exception) else {"error": str(results[2])}
+        performance_result = results[3] if not isinstance(results[3], Exception) else {"error": str(results[3])}
 
         # 生成最终报告
-        report = self._generate_report(pr_info, security_result, quality_result, docs_result)
+        report = self._generate_report(pr_info, security_result, quality_result, docs_result, performance_result)
 
         print(f"[{timestamp()}] ✅ 审查完成")
         return report
@@ -129,7 +134,8 @@ class OrchestratorAgent:
         pr_info: Dict,
         security_result: Dict,
         quality_result: Dict,
-        docs_result: Dict
+        docs_result: Dict,
+        performance_result: Dict
     ) -> Dict[str, Any]:
         """生成审查报告"""
 
@@ -137,7 +143,8 @@ class OrchestratorAgent:
         security_score = 100 - len(security_result.get("issues", [])) * 15
         quality_score = quality_result.get("quality_score", 0)
         docs_score = docs_result.get("doc_score", 0)
-        overall_score = (security_score + quality_score + docs_score) // 3
+        performance_score = performance_result.get("performance_score", 0)
+        overall_score = (security_score + quality_score + docs_score + performance_score) // 4
 
         # 构建报告
         report = {
@@ -152,15 +159,17 @@ class OrchestratorAgent:
                 "security": max(0, security_score),
                 "quality": quality_score,
                 "documentation": docs_score,
+                "performance": performance_score,
                 "overall": overall_score
             },
             "results": {
                 "security": security_result,
                 "quality": quality_result,
-                "documentation": docs_result
+                "documentation": docs_result,
+                "performance": performance_result
             },
             "summary": self._generate_summary(
-                security_result, quality_result, docs_result, overall_score
+                security_result, quality_result, docs_result, performance_result, overall_score
             )
         }
 
@@ -171,6 +180,7 @@ class OrchestratorAgent:
         security_result: Dict,
         quality_result: Dict,
         docs_result: Dict,
+        performance_result: Dict,
         overall_score: int
     ) -> str:
         """生成文字摘要"""
@@ -194,6 +204,11 @@ class OrchestratorAgent:
                 "📖 文档问题"
             ),
             "",
+            format_issues_report(
+                performance_result.get("issues", []),
+                "⚡ 性能问题"
+            ),
+            "",
             "## 💡 改进建议",
             ""
         ]
@@ -203,6 +218,7 @@ class OrchestratorAgent:
         suggestions.extend(security_result.get("suggestions", []))
         suggestions.extend(quality_result.get("suggestions", []))
         suggestions.extend(docs_result.get("suggestions", []))
+        suggestions.extend(performance_result.get("suggestions", []))
 
         if suggestions:
             for i, suggestion in enumerate(suggestions, 1):
