@@ -7,19 +7,25 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import {
-  AlertCircle,
-  CheckCircle,
-  Shield,
-  FileCode,
-  BookOpen,
-  ArrowRight,
-  Loader2,
   Cpu,
   Zap,
   GitBranch,
   Terminal,
   Sparkles,
-  Activity
+  Activity,
+  Shield,
+  FileCode,
+  BookOpen,
+  ArrowRight,
+  Loader2,
+  CheckCircle,
+  AlertTriangle,
+  Bug,
+  TrendingUp,
+  Code2,
+  Eye,
+  Clock,
+  ChevronRight
 } from 'lucide-react'
 
 interface ReviewResult {
@@ -33,6 +39,7 @@ interface ReviewResult {
     security: number
     quality: number
     documentation: number
+    performance: number
     overall: number
   }
   results: {
@@ -48,6 +55,10 @@ interface ReviewResult {
       issues: Array<{ type: string; severity: string; message: string }>
       suggestions: string[]
     }
+    performance: {
+      issues: Array<{ type: string; severity: string; message: string }>
+      suggestions: string[]
+    }
   }
   summary: string
 }
@@ -58,25 +69,24 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<ReviewResult | null>(null)
   const [error, setError] = useState('')
-  const [agents, setAgents] = useState([
-    { name: 'Security', status: 'idle', color: 'cyan' },
-    { name: 'Quality', status: 'idle', color: 'purple' },
-    { name: 'Docs', status: 'idle', color: 'green' }
-  ])
+  const [scanPhase, setScanPhase] = useState<'idle' | 'scanning' | 'complete'>('idle')
+  const [activeAgents, setActiveAgents] = useState<string[]>([])
 
   // 粒子效果
   useEffect(() => {
-    const container = document.body
-    for (let i = 0; i < 20; i++) {
+    const container = document.querySelector('.cyber-bg__particles')
+    if (!container) return
+
+    for (let i = 0; i < 30; i++) {
       const particle = document.createElement('div')
       particle.className = 'particle'
-      particle.style.left = Math.random() * 100 + 'vw'
+      particle.style.left = Math.random() * 100 + '%'
       particle.style.animationDelay = Math.random() * 15 + 's'
       particle.style.animationDuration = (15 + Math.random() * 10) + 's'
       container.appendChild(particle)
     }
     return () => {
-      document.querySelectorAll('.particle').forEach(p => p.remove())
+      container.querySelectorAll('.particle').forEach(p => p.remove())
     }
   }, [])
 
@@ -85,9 +95,14 @@ export default function Home() {
     setLoading(true)
     setError('')
     setResult(null)
+    setScanPhase('scanning')
 
-    // 模拟 Agent 启动效果
-    setAgents(agents.map(a => ({ ...a, status: 'running' })))
+    // 模拟 Agent 启动序列
+    const agentSequence = ['Security', 'Quality', 'Docs', 'Performance']
+    for (let i = 0; i < agentSequence.length; i++) {
+      await new Promise(resolve => setTimeout(resolve, 300))
+      setActiveAgents(prev => [...prev, agentSequence[i]])
+    }
 
     try {
       const response = await fetch('/api/review', {
@@ -102,141 +117,131 @@ export default function Home() {
 
       const data = await response.json()
       setResult(data)
-      setAgents(agents.map(a => ({ ...a, status: 'complete' })))
+      setScanPhase('complete')
     } catch (err) {
-      setError(err instanceof Error ? err.message : '发生未知错误')
-      setAgents(agents.map(a => ({ ...a, status: 'error' })))
+      setError(err instanceof Error ? err.message : '系统错误')
+      setScanPhase('idle')
     } finally {
       setLoading(false)
+      setActiveAgents([])
     }
-  }
-
-  const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-[#0aff0a]'
-    if (score >= 80) return 'text-[#00f0ff]'
-    if (score >= 70) return 'text-[#fff01f]'
-    if (score >= 60) return 'text-[#ff8800]'
-    return 'text-[#ff003c]'
   }
 
   const getScoreGradient = (score: number) => {
-    if (score >= 90) return 'from-[#0aff0a] to-[#00ff88]'
-    if (score >= 80) return 'from-[#00f0ff] to-[#00ff88]'
-    if (score >= 70) return 'from-[#fff01f] to-[#ff8800]'
-    return 'from-[#ff003c] to-[#ff8800]'
+    if (score >= 90) return 'cyber-progress__fill--high'
+    if (score >= 70) return 'cyber-progress__fill--medium'
+    return 'cyber-progress__fill--low'
   }
 
-  const getScoreBadge = (score: number) => {
-    if (score >= 90) return '🌟'
-    if (score >= 80) return '✅'
-    if (score >= 70) return '⚠️'
-    if (score >= 60) return '❗'
-    return '🚨'
+  const getScoreColor = (score: number) => {
+    if (score >= 90) return 'text-[#39ff14]'
+    if (score >= 80) return 'text-[#00f5ff]'
+    if (score >= 70) return 'text-[#fff01f]'
+    return 'text-[#ff003c]'
   }
 
   const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'critical': return 'bg-[#ff003c]'
-      case 'high': return 'bg-[#ff4444]'
-      case 'medium': return 'bg-[#fff01f]'
-      case 'low': return 'bg-[#0aff0a]'
-      default: return 'bg-gray-500'
+    const colors: Record<string, string> = {
+      critical: '#ff003c',
+      high: '#ff4444',
+      medium: '#fff01f',
+      low: '#39ff14'
     }
+    return colors[severity] || '#666'
   }
 
   return (
     <div className="relative min-h-screen">
-      {/* 背景效果 */}
-      <div className="cyber-grid" />
-      <div className="cyber-glow" />
+      {/* 背景层 */}
+      <div className="cyber-bg">
+        <div className="cyber-bg__grid" />
+        <div className="cyber-bg__particles" />
+        <div className="cyber-bg__glow cyber-bg__glow--right" />
+        <div className="cyber-bg__glow cyber-bg__glow--left" />
+        <div className="cyber-bg__scanlines" />
+      </div>
 
-      <main className="relative z-10 p-8">
+      {/* 主内容 */}
+      <main className="relative z-10 p-6 md:p-12">
         <div className="max-w-7xl mx-auto space-y-8">
-          {/* Header - 科技感标题 */}
-          <div className="text-center space-y-6 py-8">
-            <div className="inline-flex items-center gap-3 mb-4">
-              <div className="relative">
-                <Cpu className="w-16 h-16 text-[#6366f1] neon-text" />
-                <div className="absolute inset-0 animate-ping">
-                  <Cpu className="w-16 h-16 text-[#6366f1] opacity-20" />
-                </div>
-              </div>
+          {/* 头部 - HUD 风格 */}
+          <header className="text-center space-y-6 py-8 animate-fade-in">
+            <div className="inline-flex items-center gap-2 mb-4 cyber-badge">
+              <Terminal className="w-4 h-4" />
+              <span>SYSTEM ONLINE</span>
             </div>
 
-            <h1 className="text-6xl font-bold gradient-text neon-text">
-              Multi-Agent 代码审查助手
+            <h1 className="neon-title animate-slide-up">
+              CODE REVIEW
+              <br />
+              COMMAND CENTER
             </h1>
 
-            <div className="flex items-center justify-center gap-4 text-[#6b6b8d]">
-              <span className="flex items-center gap-2">
-                <Terminal className="w-4 h-4" />
-                基于 MCP 协议
-              </span>
-              <span className="text-[#2a2a3e]">●</span>
-              <span className="flex items-center gap-2">
-                <Zap className="w-4 h-4" />
-                多 Agent 协作
-              </span>
-              <span className="text-[#2a2a3e]">●</span>
-              <span className="flex items-center gap-2">
-                <Activity className="w-4 h-4" />
-                实时审查
-              </span>
+            <p className="neon-subtitle animate-slide-up animate-delay-1">
+              Multi-Agent AI-Powered Analysis
+            </p>
+
+            {/* Agent 状态指示器 */}
+            <div className="flex flex-wrap justify-center gap-3 mt-8 animate-slide-up animate-delay-2">
+              {['Security', 'Quality', 'Docs', 'Performance'].map((agent) => (
+                <div
+                  key={agent}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-500 ${
+                    activeAgents.includes(agent)
+                      ? 'bg-[#00f5ff]/10 border-[#00f5ff] text-[#00f5ff]'
+                      : 'bg-white/5 border-white/10 text-gray-500'
+                  }`}
+                >
+                  <div className={`w-2 h-2 rounded-full ${
+                    activeAgents.includes(agent)
+                      ? 'bg-[#00f5ff] animate-pulse'
+                      : 'bg-gray-600'
+                  }`} />
+                  <span className="text-xs font-mono">{agent}</span>
+                </div>
+              ))}
             </div>
-          </div>
+          </header>
 
-          {/* Agent 状态指示器 */}
-          <div className="flex justify-center gap-4">
-            {agents.map((agent) => (
-              <div
-                key={agent.name}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#1a1a25] border border-[#2a2a3e]"
-              >
-                <div className={`status-indicator ${
-                  agent.status === 'running' ? 'running' :
-                  agent.status === 'complete' ? 'running' :
-                  agent.status === 'error' ? 'error' : ''
-                }`} />
-                <span className="text-sm text-[#a0a0c0]">{agent.name} Agent</span>
-              </div>
-            ))}
-          </div>
-
-          {/* 输入表单 - 科技感卡片 */}
-          <Card className="neon-border cyber-card bg-[#12121a]/80 backdrop-blur border-[#2a2a3e]">
+          {/* 输入区域 */}
+          <Card className="hud-card glass animate-scale-in animate-delay-3">
             <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-[#1a1a25] border border-[#2a2a3e]">
-                  <GitBranch className="w-6 h-6 text-[#00f0ff]" />
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-lg bg-[#00f5ff]/10 border border-[#00f5ff]/30">
+                  <GitBranch className="w-6 h-6 text-[#00f5ff]" />
                 </div>
                 <div>
-                  <CardTitle className="text-[#e0e0ff] text-xl">审查 GitHub PR</CardTitle>
-                  <CardDescription className="text-[#6b6b8d] mt-1">
-                    输入仓库名称和 PR 编号，启动多 Agent 协作审查
+                  <CardTitle className="text-white text-xl">Initialize PR Scan</CardTitle>
+                  <CardDescription className="text-gray-400 mt-1">
+                    Enter repository and PR number to begin analysis
                   </CardDescription>
+                </div>
+                <div className="ml-auto">
+                  <div className="hud-card__corner hud-card__corner--tl" />
+                  <div className="hud-card__corner hud-card__corner--br" />
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <label className="text-sm font-medium text-[#a0a0c0] flex items-center gap-2">
-                      <GitBranch className="w-4 h-4 text-[#00f0ff]" />
-                      仓库全名
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-mono text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                      <GitBranch className="w-3 h-3 text-[#00f5ff]" />
+                      Repository
                     </label>
                     <Input
                       placeholder="owner/repo"
                       value={repo}
                       onChange={(e) => setRepo(e.target.value)}
                       required
-                      className="cyber-input bg-[#0a0a0f] border-[#2a2a3e] text-[#e0e0ff] placeholder:text-[#4a4a5e]"
+                      className="cyber-input w-full"
                     />
                   </div>
-                  <div className="space-y-3">
-                    <label className="text-sm font-medium text-[#a0a0c0] flex items-center gap-2">
-                      <FileCode className="w-4 h-4 text-[#bc13fe]" />
-                      PR 编号
+                  <div className="space-y-2">
+                    <label className="text-xs font-mono text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                      <Code2 className="w-3 h-3 text-[#ff00ff]" />
+                      PR Number
                     </label>
                     <Input
                       type="number"
@@ -244,25 +249,25 @@ export default function Home() {
                       value={prNumber}
                       onChange={(e) => setPrNumber(e.target.value)}
                       required
-                      className="cyber-input bg-[#0a0a0f] border-[#2a2a3e] text-[#e0e0ff] placeholder:text-[#4a4a5e]"
+                      className="cyber-input w-full"
                     />
                   </div>
                 </div>
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full cyber-button h-12 text-lg bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] hover:from-[#6366f1]/90 hover:to-[#8b5cf6]/90 border-0"
+                  className="w-full cyber-button cyber-button--primary h-14 text-base"
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      <span className="gradient-text">Multi-Agent 审查中...</span>
+                      <div className="cyber-loader" />
+                      <span>Running Multi-Agent Scan...</span>
                     </>
                   ) : (
                     <>
-                      <Sparkles className="mr-2 h-5 w-5" />
-                      启动审查
-                      <ArrowRight className="ml-2 h-5 w-5" />
+                      <Sparkles className="w-5 h-5" />
+                      <span>Initialize Scan Sequence</span>
+                      <ArrowRight className="w-5 h-5" />
                     </>
                   )}
                 </Button>
@@ -270,105 +275,96 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          {/* Error Display */}
+          {/* 错误显示 */}
           {error && (
-            <Card className="neon-border bg-[#2a0a0a]/80 backdrop-blur border-[#ff003c]/50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-[#ff4444]">
-                  <AlertCircle className="w-5 h-5" />
-                  错误
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-[#ff6666]">{error}</p>
+            <Card className="hud-card glass border-[#ff003c]/30 bg-[#ff003c]/5 animate-slide-up">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3 text-[#ff003c]">
+                  <AlertTriangle className="w-5 h-5" />
+                  <span className="font-mono">{error}</span>
+                </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Results */}
+          {/* 结果展示 */}
           {result && (
-            <div className="space-y-8">
-              {/* PR Info */}
-              <Card className="neon-border cyber-card bg-[#12121a]/80 backdrop-blur border-[#2a2a3e]">
+            <div className="space-y-6 animate-slide-up">
+              {/* PR 信息卡片 */}
+              <Card className="hud-card glass">
                 <CardHeader>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-start justify-between">
                     <div>
-                      <CardTitle className="text-[#e0e0ff] text-xl">{result.pr_info.title}</CardTitle>
-                      <CardDescription className="flex items-center gap-3 mt-2 text-[#6b6b8d]">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className="cyber-badge cyber-badge--success">
+                          <CheckCircle className="w-3 h-3" />
+                          SCAN COMPLETE
+                        </Badge>
+                      </div>
+                      <CardTitle className="text-white text-2xl">{result.pr_info.title}</CardTitle>
+                      <CardDescription className="flex items-center gap-3 mt-3 text-gray-400 font-mono text-sm">
                         <GitBranch className="w-4 h-4" />
                         <span>{result.pr_info.repo}</span>
-                        <span className="text-[#2a2a3e]">●</span>
-                        <span className="text-[#6366f1]">#{result.pr_info.number}</span>
-                        <span className="text-[#2a2a3e]">●</span>
-                        <span>{result.pr_info.author}</span>
+                        <span className="text-[#00f5ff]">#{result.pr_info.number}</span>
                       </CardDescription>
                     </div>
-                    <Badge className="bg-gradient-to-r from-[#0aff0a] to-[#00ff88] text-[#0a0a0f] font-bold border-0">
-                      <CheckCircle className="w-3 h-3 mr-1" />
-                      审查完成
-                    </Badge>
+                    <div className="text-right">
+                      <div className="text-5xl font-bold bg-gradient-to-r from-[#00f5ff] to-[#ff00ff] bg-clip-text text-transparent">
+                        {result.scores.overall}
+                      </div>
+                      <div className="text-xs text-gray-500 uppercase tracking-wider mt-1">Overall Score</div>
+                    </div>
                   </div>
                 </CardHeader>
               </Card>
 
-              {/* Scores Overview - 霓虹评分卡 */}
-              <div className="grid grid-cols-4 gap-4">
+              {/* 评分仪表板 */}
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <ScoreCard
                   icon={Shield}
-                  title="安全"
+                  title="Security"
                   score={result.scores.security}
-                  badge={getScoreBadge(result.scores.security)}
-                  color={getScoreColor(result.scores.security)}
-                  gradient={getScoreGradient(result.scores.security)}
+                  color="#00f5ff"
                 />
                 <ScoreCard
                   icon={FileCode}
-                  title="质量"
+                  title="Quality"
                   score={result.scores.quality}
-                  badge={getScoreBadge(result.scores.quality)}
-                  color={getScoreColor(result.scores.quality)}
-                  gradient={getScoreGradient(result.scores.quality)}
+                  color="#ff00ff"
                 />
                 <ScoreCard
                   icon={BookOpen}
-                  title="文档"
+                  title="Documentation"
                   score={result.scores.documentation}
-                  badge={getScoreBadge(result.scores.documentation)}
-                  color={getScoreColor(result.scores.documentation)}
-                  gradient={getScoreGradient(result.scores.documentation)}
+                  color="#39ff14"
                 />
                 <ScoreCard
-                  icon={Cpu}
-                  title="总体"
-                  score={result.scores.overall}
-                  badge={getScoreBadge(result.scores.overall)}
-                  color={getScoreColor(result.scores.overall)}
-                  gradient={getScoreGradient(result.scores.overall)}
+                  icon={Zap}
+                  title="Performance"
+                  score={result.scores.performance}
+                  color="#fff01f"
                 />
               </div>
 
-              {/* Issues - 问题列表 */}
-              <div className="grid grid-cols-3 gap-4">
+              {/* 问题列表 */}
+              <div className="grid lg:grid-cols-3 gap-4">
                 <IssuesCard
-                  title="安全审查"
+                  title="Security Issues"
                   icon={Shield}
-                  iconColor="text-[#00f0ff]"
+                  iconColor="#00f5ff"
                   issues={result.results.security.issues}
-                  suggestions={result.results.security.suggestions}
                 />
                 <IssuesCard
-                  title="代码质量"
+                  title="Code Quality"
                   icon={FileCode}
-                  iconColor="text-[#bc13fe]"
+                  iconColor="#ff00ff"
                   issues={result.results.quality.issues}
-                  suggestions={result.results.quality.suggestions}
                 />
                 <IssuesCard
-                  title="文档规范"
-                  icon={BookOpen}
-                  iconColor="text-[#0aff0a]"
-                  issues={result.results.documentation.issues}
-                  suggestions={result.results.documentation.suggestions}
+                  title="Performance"
+                  icon={Zap}
+                  iconColor="#fff01f"
+                  issues={result.results.performance.issues}
                 />
               </div>
             </div>
@@ -379,34 +375,34 @@ export default function Home() {
   )
 }
 
-function ScoreCard({ icon: Icon, title, score, badge, color, gradient }: {
+// 评分卡片组件
+function ScoreCard({ icon: Icon, title, score, color }: {
   icon: any
   title: string
   score: number
-  badge: string
   color: string
-  gradient: string
 }) {
   return (
-    <Card className="neon-border cyber-card bg-[#12121a]/80 backdrop-blur border-[#2a2a3e]">
-      <CardContent className="pt-6">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-[#1a1a25] border border-[#2a2a3e]">
-                <Icon className={`h-5 w-5 ${color}`} />
-              </div>
-              <span className="text-sm font-medium text-[#a0a0c0]">{title}</span>
+    <Card className="hud-card glass">
+      <CardContent className="pt-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className="p-2.5 rounded-lg"
+              style={{ background: `${color}15`, border: `1px solid ${color}40` }}
+            >
+              <Icon className="w-5 h-5" style={{ color }} />
             </div>
-            <span className="text-2xl">{badge}</span>
+            <span className="text-sm text-gray-400 font-mono">{title}</span>
           </div>
-          <div className={`text-4xl font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
+        </div>
+        <div className="space-y-2">
+          <div className="text-4xl font-bold" style={{ color }}>
             {score}
           </div>
-          <div className="relative">
-            <Progress value={score} className="h-3 progress-glow bg-[#1a1a25]" />
+          <div className="cyber-progress">
             <div
-              className={`absolute top-0 left-0 h-full bg-gradient-to-r ${gradient} rounded-full transition-all duration-500`}
+              className={`cyber-progress__fill ${getScoreGradientClass(score)}`}
               style={{ width: `${score}%` }}
             />
           </div>
@@ -416,63 +412,54 @@ function ScoreCard({ icon: Icon, title, score, badge, color, gradient }: {
   )
 }
 
-function IssuesCard({ title, icon: Icon, iconColor, issues, suggestions }: {
+// 问题列表卡片
+function IssuesCard({ title, icon: Icon, iconColor, issues }: {
   title: string
   icon: any
   iconColor: string
   issues: Array<{ type: string; severity: string; message: string }>
-  suggestions: string[]
 }) {
   return (
-    <Card className="neon-border cyber-card bg-[#12121a]/80 backdrop-blur border-[#2a2a3e] scan-line">
+    <Card className="hud-card glass">
       <CardHeader className="pb-3">
-        <div className="flex items-center gap-2">
-          <div className={`p-2 rounded-lg bg-[#1a1a25] border border-[#2a2a3e]`}>
-            <Icon className={`w-5 h-5 ${iconColor}`} />
+        <div className="flex items-center gap-3">
+          <div
+            className="p-2 rounded-lg"
+            style={{ background: `${iconColor}15`, border: `1px solid ${iconColor}40` }}
+          >
+            <Icon className="w-5 h-5" style={{ color: iconColor }} />
           </div>
-          <CardTitle className="text-[#e0e0ff] text-base">{title}</CardTitle>
+          <CardTitle className="text-white text-base">{title}</CardTitle>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-2">
         {issues.length === 0 ? (
-          <div className="flex items-center gap-2 text-[#0aff0a] p-3 rounded-lg bg-[#0a1a0a]/50 border border-[#0aff0a]/20">
+          <div className="flex items-center gap-2 text-[#39ff14] p-3 rounded-lg bg-[#39ff14]/5">
             <CheckCircle className="w-4 h-4" />
-            <span className="text-sm">未发现任何问题</span>
+            <span className="text-sm">No issues detected</span>
           </div>
         ) : (
           <div className="space-y-2">
             {issues.slice(0, 5).map((issue, i) => (
               <div
                 key={i}
-                className="flex items-start gap-3 p-2 rounded-lg hover:bg-[#1a1a25] transition-colors"
+                className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 transition-colors"
               >
-                <span className={`w-2 h-2 rounded-full mt-1.5 ${getSeverityColor(issue.severity)}`}
-                  style={{ boxShadow: `0 0 10px currentColor` }}
+                <div
+                  className="w-2 h-2 rounded-full mt-1.5"
+                  style={{
+                    backgroundColor: getSeverityColor(issue.severity),
+                    boxShadow: `0 0 10px ${getSeverityColor(issue.severity)}`
+                  }}
                 />
-                <span className="text-sm text-[#a0a0c0]">{issue.message}</span>
+                <span className="text-sm text-gray-300">{issue.message}</span>
               </div>
             ))}
             {issues.length > 5 && (
-              <p className="text-xs text-[#4a4a5e] text-center py-2">
-                还有 {issues.length - 5} 个问题...
-              </p>
+              <div className="text-center py-2 text-xs text-gray-500">
+                +{issues.length - 5} more issues
+              </div>
             )}
-          </div>
-        )}
-        {suggestions.length > 0 && (
-          <div className="pt-3 border-t border-[#2a2a3e]">
-            <div className="flex items-center gap-2 mb-2 text-[#bc13fe]">
-              <Zap className="w-3 h-3" />
-              <span className="text-xs font-medium">改进建议</span>
-            </div>
-            <ul className="space-y-1">
-              {suggestions.slice(0, 3).map((s, i) => (
-                <li key={i} className="text-xs text-[#6b6b8d] flex items-start gap-2">
-                  <span className="text-[#bc13fe]">▹</span>
-                  {s}
-                </li>
-              ))}
-            </ul>
           </div>
         )}
       </CardContent>
@@ -480,12 +467,18 @@ function IssuesCard({ title, icon: Icon, iconColor, issues, suggestions }: {
   )
 }
 
+function getScoreGradientClass(score: number) {
+  if (score >= 90) return 'cyber-progress__fill--high'
+  if (score >= 70) return 'cyber-progress__fill--medium'
+  return 'cyber-progress__fill--low'
+}
+
 function getSeverityColor(severity: string) {
-  switch (severity) {
-    case 'critical': return 'bg-[#ff003c]'
-    case 'high': return 'bg-[#ff4444]'
-    case 'medium': return 'bg-[#fff01f]'
-    case 'low': return 'bg-[#0aff0a]'
-    default: return 'bg-gray-500'
+  const colors: Record<string, string> = {
+    critical: '#ff003c',
+    high: '#ff4444',
+    medium: '#fff01f',
+    low: '#39ff14'
   }
+  return colors[severity] || '#666'
 }

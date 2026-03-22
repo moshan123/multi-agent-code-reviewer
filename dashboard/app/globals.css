@@ -2,92 +2,317 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  /* 深色科技主题 */
-  --background: #0a0a0f;
-  --foreground: #e0e0ff;
-  --card: #12121a;
-  --card-foreground: #e0e0ff;
-  --popover: #1a1a25;
-  --popover-foreground: #e0e0ff;
-  --primary: #6366f1;
-  --primary-foreground: #ffffff;
-  --secondary: #1e1e2a;
-  --secondary-foreground: #a0a0c0;
-  --muted: #1e1e2a;
-  --muted-foreground: #6b6b8d;
-  --accent: #8b5cf6;
-  --accent-foreground: #ffffff;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: #2a2a3e;
-  --input: #1e1e2a;
-  --ring: #6366f1;
-  --radius: 0.75rem;
+/* ===================================
+   CYBERPUNK CODE REVIEW COMMAND CENTER
+   =================================== */
 
-  /* 霓虹配色 */
-  --neon-blue: #00f0ff;
-  --neon-purple: #bc13fe;
-  --neon-green: #0aff0a;
+:root {
+  /* 核心配色 */
+  --bg-deep: #030305;
+  --bg-surface: #0a0a0f;
+  --bg-elevated: #12121a;
+  --bg-glass: rgba(18, 18, 26, 0.7);
+
+  /* 霓虹主色 */
+ --neon-cyan: #00f5ff;
+  --neon-magenta: #ff00ff;
+  --neon-lime: #39ff14;
   --neon-yellow: #fff01f;
+  --neon-orange: #ff5e00;
   --neon-red: #ff003c;
+
+  /* 渐变 */
+  --gradient-primary: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta));
+  --gradient-success: linear-gradient(135deg, var(--neon-lime), #00cc88);
+  --gradient-warning: linear-gradient(135deg, var(--neon-yellow), var(--neon-orange));
+  --gradient-danger: linear-gradient(135deg, var(--neon-orange), var(--neon-red));
+
+  /* 文字 */
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0b0;
+  --text-muted: #5a5a6a;
+
+  /* 边框 */
+  --border-glow: rgba(0, 245, 255, 0.3);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+
+  /* 阴影 */
+  --shadow-cyan: 0 0 30px rgba(0, 245, 255, 0.2);
+  --shadow-magenta: 0 0 30px rgba(255, 0, 255, 0.2);
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
 }
 
 * {
-  border-color: var(--border);
+  box-sizing: border-box;
 }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+  overflow-x: hidden;
 }
 
-/* 科技感背景网格 */
-.cyber-grid {
+/* ===================================
+   动态背景系统
+   =================================== */
+
+.cyber-bg {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-image:
-    linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
-  background-size: 50px 50px;
-  pointer-events: none;
+  inset: 0;
   z-index: 0;
-}
-
-/* 动态光晕效果 */
-.cyber-glow {
-  position: fixed;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(99, 102, 241, 0.08) 0%,
-    transparent 70%
-  );
-  pointer-events: none;
-  z-index: 0;
-  animation: pulse 8s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.1); }
-}
-
-/* 卡片霓虹边框 */
-.neon-border {
-  position: relative;
-  background: var(--card);
-  border: 1px solid var(--border);
   overflow: hidden;
 }
 
-.neon-border::before {
+/* 网格地面效果 */
+.cyber-bg__grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 245, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: grid-move 20s linear infinite;
+}
+
+@keyframes grid-move {
+  0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
+  100% { transform: perspective(500px) rotateX(60deg) translateY(60px); }
+}
+
+/* 扫描线覆盖层 */
+.cyber-bg__scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15) 0px,
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* 浮动粒子 */
+.cyber-bg__particles {
+  position: absolute;
+  inset: 0;
+}
+
+.particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: var(--neon-cyan);
+  border-radius: 50%;
+  opacity: 0;
+  animation: particle-float 15s ease-in-out infinite;
+  box-shadow: 0 0 10px var(--neon-cyan);
+}
+
+@keyframes particle-float {
+  0% {
+    transform: translateY(100vh) scale(0);
+    opacity: 0;
+  }
+  10% { opacity: 0.8; }
+  90% { opacity: 0.8; }
+  100% {
+    transform: translateY(-100px) scale(1);
+    opacity: 0;
+  }
+}
+
+/* 环境光晕 */
+.cyber-bg__glow {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 245, 255, 0.08) 0%,
+    transparent 60%
+  );
+  animation: glow-pulse 8s ease-in-out infinite;
+}
+
+.cyber-bg__glow--right {
+  top: -200px;
+  right: -200px;
+}
+
+.cyber-bg__glow--left {
+  bottom: -200px;
+  left: -200px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 0, 255, 0.06) 0%,
+    transparent 60%
+  );
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* ===================================
+   HUD 风格卡片
+   =================================== */
+
+.hud-card {
+  position: relative;
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.hud-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 245, 255, 0.3) 0%,
+    transparent 50%,
+    rgba(255, 0, 255, 0.3) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.hud-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-glow);
+  box-shadow:
+    var(--shadow-cyan),
+    0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+/* HUD 角落装饰 */
+.hud-card__corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--neon-cyan);
+  pointer-events: none;
+}
+
+.hud-card__corner--tl {
+  top: 10px;
+  left: 10px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.hud-card__corner--br {
+  bottom: 10px;
+  right: 10px;
+  border-left: none;
+  border-top: none;
+  border-color: var(--neon-magenta);
+}
+
+/* ===================================
+   霓虹文字效果
+   =================================== */
+
+.neon-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 30px rgba(0, 245, 255, 0.4));
+  letter-spacing: -0.02em;
+}
+
+.neon-subtitle {
+  color: var(--text-secondary);
+  font-size: 1.125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+/* ===================================
+   输入框样式
+   =================================== */
+
+.cyber-input {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.875rem 1rem;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.cyber-input:focus {
+  outline: none;
+  border-color: var(--neon-cyan);
+  box-shadow:
+    0 0 0 2px rgba(0, 245, 255, 0.1),
+    0 0 20px rgba(0, 245, 255, 0.2);
+}
+
+.cyber-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ===================================
+   按钮样式
+   =================================== */
+
+.cyber-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.cyber-button--primary {
+  background: var(--gradient-primary);
+  color: white;
+  box-shadow: 0 0 30px rgba(0, 245, 255, 0.3);
+}
+
+.cyber-button--primary:hover {
+  box-shadow:
+    0 0 40px rgba(0, 245, 255, 0.5),
+    0 0 80px rgba(255, 0, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.cyber-button::before {
   content: '';
   position: absolute;
   top: 0;
@@ -97,190 +322,209 @@ body {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(99, 102, 241, 0.3),
+    rgba(255, 255, 255, 0.3),
     transparent
   );
   transition: left 0.5s ease;
 }
 
-.neon-border:hover::before {
+.cyber-button:hover::before {
   left: 100%;
 }
 
-/* 文字霓虹效果 */
-.neon-text {
-  text-shadow:
-    0 0 10px rgba(99, 102, 241, 0.5),
-    0 0 20px rgba(99, 102, 241, 0.3),
-    0 0 30px rgba(99, 102, 241, 0.2);
-}
+/* ===================================
+   进度条/评分条
+   =================================== */
 
-.neon-text-blue {
-  text-shadow:
-    0 0 10px rgba(0, 240, 255, 0.5),
-    0 0 20px rgba(0, 240, 255, 0.3),
-    0 0 30px rgba(0, 240, 255, 0.2);
-}
-
-.neon-text-purple {
-  text-shadow:
-    0 0 10px rgba(188, 19, 254, 0.5),
-    0 0 20px rgba(188, 19, 254, 0.3),
-    0 0 30px rgba(188, 19, 254, 0.2);
-}
-
-/* 进度条动画 */
-.progress-glow {
+.cyber-progress {
   position: relative;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
   overflow: hidden;
 }
 
-.progress-glow::after {
-  content: '';
+.cyber-progress__fill {
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
-  animation: shimmer 2s infinite;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+.cyber-progress__fill--high {
+  background: var(--gradient-success);
+  box-shadow: 0 0 20px rgba(57, 255, 20, 0.5);
 }
 
-/* 按钮悬停效果 */
-.cyber-button {
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s ease;
+.cyber-progress__fill--medium {
+  background: var(--gradient-warning);
+  box-shadow: 0 0 20px rgba(255, 240, 31, 0.5);
 }
 
-.cyber-button::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 255, 255, 0.1) 0%,
-    transparent 70%
-  );
-  transform: scale(0);
-  transition: transform 0.5s ease;
+.cyber-progress__fill--low {
+  background: var(--gradient-danger);
+  box-shadow: 0 0 20px rgba(255, 0, 60, 0.5);
 }
 
-.cyber-button:hover::after {
-  transform: scale(1);
+/* ===================================
+   徽章/状态标签
+   =================================== */
+
+.cyber-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 9999px;
+  background: rgba(0, 245, 255, 0.1);
+  border: 1px solid rgba(0, 245, 255, 0.3);
+  color: var(--neon-cyan);
 }
 
-/* 输入框聚焦效果 */
-.cyber-input:focus {
-  box-shadow:
-    0 0 0 2px var(--background),
-    0 0 0 4px var(--ring),
-    0 0 20px rgba(99, 102, 241, 0.3);
+.cyber-badge--success {
+  background: rgba(57, 255, 20, 0.1);
+  border-color: rgba(57, 255, 20, 0.3);
+  color: var(--neon-lime);
 }
 
-/* 卡片悬浮效果 */
-.cyber-card {
-  transition: all 0.3s ease;
+.cyber-badge--warning {
+  background: rgba(255, 240, 31, 0.1);
+  border-color: rgba(255, 240, 31, 0.3);
+  color: var(--neon-yellow);
 }
 
-.cyber-card:hover {
-  transform: translateY(-4px);
-  box-shadow:
-    0 20px 40px rgba(0, 0, 0, 0.4),
-    0 0 30px rgba(99, 102, 241, 0.1);
+.cyber-badge--danger {
+  background: rgba(255, 0, 60, 0.1);
+  border-color: rgba(255, 0, 60, 0.3);
+  color: var(--neon-red);
 }
 
-/* 扫描线效果 */
-.scan-line {
-  position: relative;
-  overflow: hidden;
+/* ===================================
+   列表项样式
+   =================================== */
+
+.cyber-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  transition: background 0.2s ease;
 }
 
-.scan-line::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--neon-blue),
-    transparent
-  );
-  animation: scan 3s linear infinite;
+.cyber-list-item:hover {
+  background: rgba(255, 255, 255, 0.03);
 }
 
-@keyframes scan {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100vh); }
-}
-
-/* 粒子背景 */
-.particle {
-  position: fixed;
-  width: 4px;
-  height: 4px;
-  background: var(--neon-blue);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 0;
-  animation: float 15s infinite;
-  opacity: 0.3;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-  10% { opacity: 0.3; }
-  90% { opacity: 0.3; }
-  100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
-}
-
-/* 状态指示器 */
-.status-indicator {
+.cyber-list-item__dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  animation: blink 2s infinite;
+  margin-top: 0.375rem;
+  box-shadow: 0 0 10px currentColor;
 }
 
-.status-indicator.running {
-  background: var(--neon-green);
-  box-shadow: 0 0 10px var(--neon-green);
+/* ===================================
+   动画效果
+   =================================== */
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.status-indicator.error {
-  background: var(--neon-red);
-  box-shadow: 0 0 10px var(--neon-red);
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
-/* 渐变文字 */
-.gradient-text {
-  background: linear-gradient(
-    135deg,
-    var(--neon-blue),
-    var(--neon-purple)
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.animate-slide-up {
+  animation: slideUp 0.6s ease forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s ease forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.5s ease forwards;
+}
+
+/* 交错动画延迟 */
+.animate-delay-1 { animation-delay: 0.1s; }
+.animate-delay-2 { animation-delay: 0.2s; }
+.animate-delay-3 { animation-delay: 0.3s; }
+.animate-delay-4 { animation-delay: 0.4s; }
+
+/* ===================================
+   加载动画
+   =================================== */
+
+.cyber-loader {
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+
+.cyber-loader__ring {
+  position: absolute;
+  inset: 0;
+  border: 3px solid transparent;
+  border-top-color: var(--neon-cyan);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.cyber-loader__ring::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 3px solid transparent;
+  border-top-color: var(--neon-magenta);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite reverse;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===================================
+   工具类
+   =================================== */
+
+.text-glow {
+  text-shadow: 0 0 20px currentColor;
+}
+
+.border-glow {
+  box-shadow: 0 0 20px rgba(0, 245, 255, 0.2);
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(10px);
 }

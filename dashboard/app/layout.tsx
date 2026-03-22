@@ -1,5 +1,3 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
 import './globals.css'
 
 export default function RootLayout({
@@ -10,10 +8,13 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <head>
-        <title>Multi-Agent 代码审查助手</title>
-        <meta name="description" content="基于 MCP 的多 Agent 协作代码审查系统" />
+        <title>Code Review Command Center</title>
+        <meta name="description" content="Multi-Agent AI-Powered Code Analysis" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body>{children}</body>
+      <body className="font-mono">{children}</body>
     </html>
   )
 }
